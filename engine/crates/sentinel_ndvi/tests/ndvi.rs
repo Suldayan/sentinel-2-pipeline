@@ -68,7 +68,7 @@ fn ndvi_is_symmetric() {
 
 #[test]
 fn difference_map_detects_vegetation_decline() {
-    let past    = vec![0.6_f32; 100];
+    let past = vec![0.6_f32; 100];
     let present = vec![0.3_f32; 100];
     let diff = calc_difference_map(&past, &present).unwrap();
     assert!(diff.mean_change < 0.0, "Expected negative mean change");
@@ -78,7 +78,7 @@ fn difference_map_detects_vegetation_decline() {
 
 #[test]
 fn difference_map_detects_vegetation_growth() {
-    let past    = vec![0.3_f32; 100];
+    let past = vec![0.3_f32; 100];
     let present = vec![0.7_f32; 100];
     let diff = calc_difference_map(&past, &present).unwrap();
     assert!(diff.mean_change > 0.0, "Expected positive mean change");
@@ -92,13 +92,13 @@ fn difference_map_is_zero_for_identical_inputs() {
     let diff = calc_difference_map(&ndvi, &ndvi).unwrap();
     assert!(diff.mean_change.abs() < 1e-5);
     assert!(diff.max_decline.abs() < 1e-5);
-    assert!(diff.max_growth.abs()  < 1e-5);
+    assert!(diff.max_growth.abs() < 1e-5);
 }
 
 #[test]
 fn difference_map_mean_change_is_mathematically_correct() {
     // All pixels change by exactly +0.2 — easy to verify by hand
-    let past    = vec![0.4_f32; 10];
+    let past = vec![0.4_f32; 10];
     let present = vec![0.6_f32; 10];
     let diff = calc_difference_map(&past, &present).unwrap();
     assert!(
@@ -109,7 +109,7 @@ fn difference_map_mean_change_is_mathematically_correct() {
 
 #[test]
 fn difference_map_errors_on_mismatched_lengths() {
-    let past    = vec![0.5_f32; 100];
+    let past = vec![0.5_f32; 100];
     let present = vec![0.5_f32; 50];
     let err = calc_difference_map(&past, &present).unwrap_err();
     assert!(

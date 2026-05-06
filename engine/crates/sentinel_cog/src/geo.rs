@@ -1,5 +1,5 @@
 use sentinel_types::BBox;
-use crate::parse::{GeoTransform, IfdInfo};
+use crate::parse::IfdInfo;
 
 /// Convert WGS84 lat/lon degrees to UTM Zone 10N easting/northing (metres).
 fn latlon_to_utm10n(lat_deg: f64, lon_deg: f64) -> (f64, f64) {

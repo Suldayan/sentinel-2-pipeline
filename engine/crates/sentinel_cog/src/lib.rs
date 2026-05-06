@@ -14,9 +14,9 @@
 //! // All tiles at overview level 3 (~300 m resolution, ~500 KB)
 //! let raster = fetch_overview(&client, "https://…/B04.tif", 3)?;
 //!
-//! // Only tiles intersecting Surrey at full 10 m resolution
-//! let bbox = BBox::surrey_bc();
-//! let raster = fetch_overview_bbox(&client, "https://…/B04.tif", 0, &bbox)?;
+//! // Only tiles intersecting the Lower Mainland at 20 m resolution
+//! let bbox = BBox { min_lon: -123.5, max_lon: -122.2, min_lat: 49.0, max_lat: 49.5 };
+//! let raster = fetch_overview_bbox(&client, "https://…/B04.tif", 1, &bbox)?;
 //! # Ok::<(), CogError>(())
 //! ```
 
@@ -26,7 +26,7 @@ mod fetch;
 mod geo;
 pub mod parse;
 
-pub use decode::Raster;
+pub use decode::{Raster, NODATA};
 pub use error::{CogError, CogResult};
 pub use parse::{IfdInfo, GeoTransform, is_little_endian, parse_subifds, parse_ifd_bytes};
 
@@ -50,8 +50,9 @@ pub fn fetch_overview(
 
 /// Fetch only the tiles intersecting `bbox` at the given overview level.
 ///
-/// Requires embedded georeferencing tags (33550 + 33922) in the TIFF.
-/// Falls back to fetching all tiles when those tags are absent.
+/// Pixels outside fetched tiles are filled with [`NODATA`] (`u16::MAX`) rather
+/// than 0, so downstream NDVI compute can distinguish nodata from bare soil.
+/// Falls back to fetching all tiles when georeferencing tags are absent.
 pub fn fetch_overview_bbox(
     client: &reqwest::blocking::Client,
     url: &str,
@@ -65,7 +66,6 @@ pub fn fetch_overview_bbox(
         return Err(CogError::InvalidHeader("No tiles intersect the given bbox".into()));
     }
 
-    // Compute the pixel bounds of the filtered tile set
     let min_col = tile_refs.iter().map(|(i, _, _)| (*i as u32) % info.tiles_across).min().unwrap();
     let max_col = tile_refs.iter().map(|(i, _, _)| (*i as u32) % info.tiles_across).max().unwrap();
     let min_row = tile_refs.iter().map(|(i, _, _)| (*i as u32) / info.tiles_across).min().unwrap();
@@ -75,7 +75,7 @@ pub fn fetch_overview_bbox(
     let out_h = ((max_row - min_row + 1) * info.tile_h).min(info.img_h);
 
     let tiles = decode::fetch_tiles(client, url, &tile_refs)?;
-    decode::decode_tiles_region(tiles, &info, le, min_col, min_row, out_w, out_h)
+    decode::decode_tiles_region(tiles, &info, le, min_col, min_row, out_w, out_h, max_col, max_row)
 }
 
 fn resolve_ifd(

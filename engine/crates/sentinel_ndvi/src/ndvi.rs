@@ -1,13 +1,6 @@
 use sentinel_cog::Raster;
 use crate::error::{NdviError, NdviResult};
 
-/// Compute per-pixel NDVI from two aligned raster bands.
-///
-/// Returns `(ndvi_values, width, height)`.
-///
-/// # Errors
-///
-/// Returns [`NdviError::DimensionMismatch`] when the bands differ in size.
 pub fn compute_ndvi(b04: &Raster, b08: &Raster) -> NdviResult<(Vec<f32>, u32, u32)> {
     if b04.width != b08.width || b04.height != b08.height {
         return Err(NdviError::DimensionMismatch {
@@ -18,14 +11,20 @@ pub fn compute_ndvi(b04: &Raster, b08: &Raster) -> NdviResult<(Vec<f32>, u32, u3
     Ok((compute_ndvi_raw(&b04.pixels, &b08.pixels), b04.width, b04.height))
 }
 
-/// Compute NDVI from raw pixel slices.
+/// Compute NDVI from raw u16 pixel slices.
 ///
-/// Output values are in `[-1.0, 1.0]`. Pixels where `NIR + Red == 0`
-/// (e.g. sensor fill values) are clamped to `0.0`.
+/// Pixels where either band is [`sentinel_cog::NODATA`] (`u16::MAX`) are
+/// written as `f32::NAN` — QGIS renders these as transparent, preventing
+/// nodata from appearing as bare soil (NDVI 0.0) in the output.
+///
+/// All other pixels where NIR + Red == 0 are clamped to 0.0.
 pub fn compute_ndvi_raw(b04: &[u16], b08: &[u16]) -> Vec<f32> {
     b04.iter()
         .zip(b08.iter())
         .map(|(&red, &nir)| {
+            if red == sentinel_cog::NODATA || nir == sentinel_cog::NODATA {
+                return f32::NAN;
+            }
             let r = red as f32;
             let n = nir as f32;
             let denom = n + r;

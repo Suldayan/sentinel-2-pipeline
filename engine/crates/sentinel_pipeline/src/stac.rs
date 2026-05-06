@@ -4,7 +4,6 @@ use crate::error::{PipelineError, PipelineResult};
 
 const SIGN_URL: &str = "https://planetarycomputer.microsoft.com/api/sas/v1/sign";
 const STAC_URL: &str = "https://planetarycomputer.microsoft.com/api/stac/v1/search";
-pub(crate) const DATE_FMT: &str = "%Y-%m-%dT%H:%M:%SZ";
 const MAX_RETRY: u32  = 3;
 
 #[derive(Debug, Clone, Deserialize)]
