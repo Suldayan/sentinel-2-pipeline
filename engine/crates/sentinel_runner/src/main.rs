@@ -5,6 +5,8 @@ use sentinel_orchestrator::{OrchestratorConfig, predict_loop};
 use sentinel_pipeline::handle_pass;
 use sentinel_types::{SatellitePassEvent, BBox};
 
+const OVERVIEW_LEVEL: u8 = 1;
+
 fn main() {
     env_logger::init();
 
@@ -23,6 +25,6 @@ fn main() {
     thread::spawn(move || predict_loop(tx, config));
 
     for event in rx {
-        thread::spawn(move || handle_pass(event));
+        thread::spawn(move || handle_pass(event, OVERVIEW_LEVEL));
     }
 }

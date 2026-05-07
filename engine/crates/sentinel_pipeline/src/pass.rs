@@ -1,4 +1,6 @@
 use std::time::Duration;
+use std::fs;
+use chrono::Utc;
 use log::{info, error};
 use sentinel_ndvi::{compute_ndvi, write_f32_tiff, GeoRef};
 use sentinel_types::{SatellitePassEvent, BBox};
@@ -9,7 +11,7 @@ use crate::stac::fetch_scene_urls;
 ///
 /// Returns the output path on success, or `Ok(None)` when no imagery is
 /// available for this pass.
-pub fn ingest_pass(event: &SatellitePassEvent) -> PipelineResult<Option<String>> {
+pub fn ingest_pass(event: &SatellitePassEvent, overview_level: u8) -> PipelineResult<Option<String>> {
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(120))
         .build()
@@ -29,42 +31,26 @@ pub fn ingest_pass(event: &SatellitePassEvent) -> PipelineResult<Option<String>>
         return Ok(None);
     };
 
-    let bbox = BBox {
-        min_lon: event.min_lon,
-        max_lon: event.max_lon,
-        min_lat: event.min_lat,
-        max_lat: event.max_lat,
-    };
+    let bbox = build_bbox(event.min_lon, event.max_lon, event.min_lat, event.max_lat)?;
 
-    let b04 = sentinel_cog::fetch_overview_bbox(&client, &urls.b04, 1, &bbox)?;
-    let b08 = sentinel_cog::fetch_overview_bbox(&client, &urls.b08, 1, &bbox)?;
+    let b04 = sentinel_cog::fetch_overview_bbox(&client, &urls.b04, overview_level as usize, &bbox)?;
+    let b08 = sentinel_cog::fetch_overview_bbox(&client, &urls.b08, overview_level as usize, &bbox)?;
 
     info!("Bands fetched: {}×{}", b04.width, b04.height);
 
     let (ndvi, w, h) = compute_ndvi(&b04, &b08)?;
 
-    let out_dir = std::path::Path::new("output/ndvi");
-    std::fs::create_dir_all(out_dir)
-        .map_err(PipelineError::Io)?;
+    let (_, tiff_path) = create_ndvi_output_dir()?;
 
-    let filename = format!(
-        "ndvi_{}.tif",
-        chrono::Utc::now().format("%Y-%m-%dT%H-%M-%SZ")
-    );
+    write_f32_tiff(&ndvi, w, h, &tiff_path, &GeoRef::utm10n_10m())?;
+    info!("Saved {tiff_path}");
 
-    let path = out_dir.join(filename);
-    let path_str = path.to_string_lossy().to_string();
-
-    write_f32_tiff(&ndvi, w, h, &path_str, &GeoRef::utm10n_10m())?;
-    info!("Saved {path_str}");
-
-    Ok(Some(path_str))
+    Ok(Some(tiff_path))
 }
 
-/// Block until 6 hours after pass end, then run [`ingest_pass`].
-pub fn handle_pass(event: SatellitePassEvent) {
+pub fn handle_pass(event: SatellitePassEvent, overview_level: u8) {
     let ready_at = event.pass_end + chrono::Duration::hours(6);
-    let wait = (ready_at - chrono::Utc::now())
+    let wait = (ready_at - Utc::now())
         .to_std()
         .unwrap_or(Duration::ZERO);
 
@@ -74,9 +60,50 @@ pub fn handle_pass(event: SatellitePassEvent) {
     );
     std::thread::sleep(wait);
 
-    match ingest_pass(&event) {
+    match ingest_pass(&event, overview_level) {
         Ok(Some(path)) => info!("Ingestion complete: {path}"),
         Ok(None) => info!("No imagery available, skipping"),
         Err(e) => error!("Ingestion failed for {}: {e}", event.satellite_id),
     }
+}
+
+fn create_ndvi_output_dir() -> PipelineResult<(String, String)> {
+    let timestamp = Utc::now().format("%Y-%m-%dT%H-%M-%SZ").to_string();
+    let base = std::env::var("OUTPUT_DIR").unwrap_or_else(|_| "output/ndvi".into());
+    let out_dir = format!("{}/{}/", base, timestamp);
+
+    fs::create_dir_all(&out_dir)?;
+
+    let tiff_filename = format!("ndvi_{}.tif", timestamp);
+    let tiff_path = format!("{}{}", out_dir, tiff_filename);
+
+    Ok((out_dir, tiff_path))
+}
+
+fn build_bbox(
+    min_lon: f64, max_lon: f64,
+    min_lat: f64, max_lat: f64,
+) -> PipelineResult<BBox> {
+    if min_lon < -180.0 || max_lon > 180.0 {
+        return Err(PipelineError::InvalidBBox(
+            format!("longitude out of range: min={min_lon}, max={max_lon}")
+        ));
+    }
+    if min_lat < -90.0 || max_lat > 90.0 {
+        return Err(PipelineError::InvalidBBox(
+            format!("latitude out of range: min={min_lat}, max={max_lat}")
+        ));
+    }
+    if min_lon >= max_lon {
+        return Err(PipelineError::InvalidBBox(
+            format!("min_lon ({min_lon}) must be less than max_lon ({max_lon})")
+        ));
+    }
+    if min_lat >= max_lat {
+        return Err(PipelineError::InvalidBBox(
+            format!("min_lat ({min_lat}) must be less than max_lat ({max_lat})")
+        ));
+    }
+
+    Ok(BBox { min_lon, max_lon, min_lat, max_lat })
 }

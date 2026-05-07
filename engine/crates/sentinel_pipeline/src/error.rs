@@ -19,6 +19,9 @@ pub enum PipelineError {
 
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Invalid bounding box: {0}")]  
+    InvalidBBox(String),
 }
 
 pub type PipelineResult<T> = Result<T, PipelineError>;
