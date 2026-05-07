@@ -27,6 +27,5 @@ pub fn fetch_tle(norad_id: u32) -> OrchestratorResult<(String, String)> {
         return Err(OrchestratorError::TleMalformed);
     }
 
-    // lines[0] = satellite name, lines[1] = TLE line 1, lines[2] = TLE line 2
     Ok((lines[1].to_string(), lines[2].to_string()))
 }

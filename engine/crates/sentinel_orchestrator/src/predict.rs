@@ -5,7 +5,6 @@ use crate::config::OrchestratorConfig;
 use crate::error::{OrchestratorError, OrchestratorResult};
 use sentinel_types::SatellitePassEvent;
 
-/// Convert a Unix timestamp in milliseconds to a UTC `DateTime`.
 pub fn ms_to_datetime(ms: f64) -> DateTime<Utc> {
     Utc.timestamp_millis_opt(ms as i64)
         .single()
@@ -41,14 +40,14 @@ pub fn predict_passes(
     let events = windows
         .into_iter()
         .map(|w| SatellitePassEvent {
-            satellite_id:      config.satellite_id.clone(),
-            pass_start:        ms_to_datetime(w.start_ms),
-            pass_end:          ms_to_datetime(w.end_ms),
+            satellite_id: config.satellite_id.clone(),
+            pass_start: ms_to_datetime(w.start_ms),
+            pass_end: ms_to_datetime(w.end_ms),
             max_elevation_deg: w.max_elevation_deg,
-            min_lon:           config.bbox.min_lon,
-            max_lon:           config.bbox.max_lon,
-            min_lat:           config.bbox.min_lat,
-            max_lat:           config.bbox.max_lat,
+            min_lon: config.bbox.min_lon,
+            max_lon: config.bbox.max_lon,
+            min_lat: config.bbox.min_lat,
+            max_lat: config.bbox.max_lat,
         })
         .collect();
 

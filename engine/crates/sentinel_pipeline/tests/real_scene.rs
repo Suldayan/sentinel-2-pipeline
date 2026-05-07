@@ -6,7 +6,7 @@ use sentinel_pipeline::stac::fetch_scene_urls;
 
 const T1: &str = "2015-07-10T00:00:00Z";
 const T2: &str = "2026-03-10T23:59:59Z";
-const OVERVIEW_LEVEL: u8 = 1;
+const OVERVIEW_LEVEL: u8 = 0;
 
 fn event() -> SatellitePassEvent {
     SatellitePassEvent {
@@ -19,8 +19,6 @@ fn event() -> SatellitePassEvent {
         max_lon: -122.88,
         min_lat:  49.00,
         max_lat:  49.40,
-
-
     }
 }
 
