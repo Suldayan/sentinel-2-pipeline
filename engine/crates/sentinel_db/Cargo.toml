@@ -3,7 +3,7 @@ name = "sentinel_db"
 version = "0.1.0"
 
 [dependencies]
-sentinel_pipeline = "../sentinel_pipeline"
-event_observer = "0.1.0"
+sentinel_types = { path = "../sentinel_types", version = "0.1.0" }
 postgres = "0.19.13"
-postgis = "0.9.0"
+thiserror = "1"
+log = "0.4"

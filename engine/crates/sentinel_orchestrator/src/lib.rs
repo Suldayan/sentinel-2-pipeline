@@ -15,7 +15,7 @@ mod runner;
 
 pub use error::{OrchestratorError, OrchestratorResult, PipelineError, PipelineResult};
 
-pub use config::{OrchestratorConfig};
+pub use config::{OrchestratorConfig, load_config};
 pub use tle::fetch_tle;
 pub use predict::{predict_passes, ms_to_datetime};
 pub use runner::predict_loop;
