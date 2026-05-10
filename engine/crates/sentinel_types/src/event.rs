@@ -1,4 +1,4 @@
-use crate::pipeline_result::PipelineResult;
+use crate::ndvi_record::NdviRecord;
 
 /// A confirmed satellite pass enriched with pipeline metadata.
 ///
@@ -22,5 +22,5 @@ pub struct SatellitePassEvent {
 #[derive(Debug)]
 pub enum Event {
     SatellitePass(SatellitePassEvent),
-    PipelineFinished(Result<Option<PipelineResult>, String>),
+    PipelineFinished(Result<Option<NdviRecord>, String>),
 }

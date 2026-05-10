@@ -3,7 +3,7 @@ use std::fs;
 use chrono::Utc;
 use log::{info, error};
 use sentinel_ndvi::{compute_ndvi, write_f32_tiff, GeoRef};
-use sentinel_types::{SatellitePassEvent, BBox, PipelineResult};
+use sentinel_types::{SatellitePassEvent, BBox, NdviRecord};
 use crate::error::PipelineError;
 use crate::stac::fetch_scene_urls;
 
@@ -11,7 +11,7 @@ use crate::stac::fetch_scene_urls;
 ///
 /// Returns the output path on success, or `Ok(None)` when no imagery is
 /// available for this pass.
-pub fn ingest_pass(event: &SatellitePassEvent, overview_level: u8) -> PipelineResult<Option<String>> {
+pub fn ingest_pass(event: &SatellitePassEvent, overview_level: u8) -> PipelineResult<Option<NdviRecord>> {
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(120))
         .build()
@@ -60,7 +60,8 @@ pub fn handle_pass(tx: mpsc::Sender<Event>, event: SatellitePassEvent, overview_
     );
     std::thread::sleep(wait);
 
-    let result: PipelineResult<Option<String>> = ingest_pass(&event, overview_level);
+    let result = ingest_pass(&event, overview_level)
+        .map_err(|e| e.to_string());
 
     match &result {
         Ok(Some(path)) => info!("Ingestion complete: {path}"),
