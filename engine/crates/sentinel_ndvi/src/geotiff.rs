@@ -48,10 +48,10 @@ impl GeoRef {
 ///
 /// Returns [`NdviError`] on buffer size mismatch or I/O failure.
 pub fn write_rgb_geotiff(
-    ndvi:   &[f32],
-    width:  u32,
+    ndvi: &[f32],
+    width: u32,
     height: u32,
-    path:   &str,
+    path: &str,
     georef: &GeoRef,
 ) -> NdviResult<()> {
     let pixels: Vec<u8> = ndvi.iter()
@@ -91,8 +91,6 @@ pub fn write_f32_tiff(
     Ok(())
 }
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
-
 fn write_sidecars(tif_path: &str, georef: &GeoRef) -> NdviResult<()> {
     let tfw = format!(
         "{}\n0.0\n0.0\n{}\n{}\n{}\n",
@@ -108,11 +106,11 @@ fn write_sidecars(tif_path: &str, georef: &GeoRef) -> NdviResult<()> {
 fn ndvi_to_rgb(v: f32) -> [u8; 3] {
     #[rustfmt::skip]
     const RAMP: [(f32, u8, u8, u8); 5] = [
-        (-1.0,   0,   0, 128),  // deep blue  – water / shadow
-        (-0.1,  80,  60,  10),  // dark brown – bare soil
-        ( 0.1, 200, 200,  30),  // yellow     – sparse / dry veg
-        ( 0.4,  60, 180,  20),  // lime green – moderate vegetation
-        ( 1.0,   0,  80,   0),  // dark green – dense canopy
+        (-1.0, 0, 0, 128),  // deep blue  – water / shadow
+        (-0.1, 80, 60, 10),  // dark brown – bare soil
+        ( 0.1, 200, 200, 30),  // yellow     – sparse / dry veg
+        ( 0.4, 60, 180, 20),  // lime green – moderate vegetation
+        ( 1.0, 0, 80, 0),  // dark green – dense canopy
     ];
 
     let v = v.clamp(-1.0, 1.0);

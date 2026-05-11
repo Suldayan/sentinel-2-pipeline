@@ -1,31 +1,6 @@
 use sentinel_orchestrator::OrchestratorError;
 use sentinel_types::BBox;
 
-#[test]
-fn surrey_bc_bbox_is_in_correct_quadrant() {
-    let bbox = BBox::surrey_bc();
-    // Surrey is in the northern hemisphere, western longitude
-    assert!(bbox.min_lat > 0.0, "Surrey should be north of equator");
-    assert!(bbox.min_lon < 0.0, "Surrey should be west of prime meridian");
-    assert!(bbox.max_lat > bbox.min_lat, "max_lat should exceed min_lat");
-    assert!(bbox.max_lon > bbox.min_lon, "max_lon should exceed min_lon");
-}
-
-#[test]
-fn ms_to_datetime_unix_epoch() {
-    use sentinel_orchestrator::ms_to_datetime;
-    let dt = ms_to_datetime(0.0);
-    assert_eq!(dt.to_rfc3339(), "1970-01-01T00:00:00+00:00");
-}
-
-#[test]
-fn ms_to_datetime_known_timestamp() {
-    use sentinel_orchestrator::ms_to_datetime;
-    // 2026-04-09T18:00:00Z = 1775757600 seconds = 1775757600000 ms
-    let dt = ms_to_datetime(1_775_757_600_000.0);
-    assert_eq!(dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(), "2026-04-09T18:00:00Z");
-}
-
 /// Verify Celestrak returns a valid 3-line TLE for Sentinel-2A.
 /// Run with `cargo test -- --ignored`.
 #[test]

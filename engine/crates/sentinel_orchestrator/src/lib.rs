@@ -17,5 +17,5 @@ pub use error::{OrchestratorError, OrchestratorResult};
 
 pub use config::{OrchestratorConfig, load_config};
 pub use tle::fetch_tle;
-pub use predict::{predict_passes, ms_to_datetime};
+pub use predict::predict_passes;
 pub use runner::predict_loop;

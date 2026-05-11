@@ -326,3 +326,246 @@ fn tag_name(tag: u16) -> &'static str {
         _ => "Unknown",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::CogError;
+
+    // ── is_little_endian ────────────────────────────────────────────────────
+
+    #[test]
+    fn little_endian_marker_detected() {
+        assert_eq!(is_little_endian(b"II\x2A\x00").unwrap(), true);
+    }
+
+    #[test]
+    fn big_endian_marker_detected() {
+        assert_eq!(is_little_endian(b"MM\x00\x2A").unwrap(), false);
+    }
+
+    #[test]
+    fn invalid_marker_returns_error() {
+        let err = is_little_endian(b"\x00\x00\x2A\x00").unwrap_err();
+        assert!(matches!(err, CogError::InvalidHeader(_)));
+    }
+
+    #[test]
+    fn empty_slice_returns_error() {
+        let err = is_little_endian(b"").unwrap_err();
+        assert!(matches!(err, CogError::InvalidHeader(_)));
+    }
+
+    // ── type_size ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn type_size_short_is_2() {
+        assert_eq!(type_size(TYPE_SHORT, 0).unwrap(), 2);
+    }
+
+    #[test]
+    fn type_size_long_is_4() {
+        assert_eq!(type_size(TYPE_LONG, 0).unwrap(), 4);
+    }
+
+    #[test]
+    fn type_size_long8_is_8() {
+        assert_eq!(type_size(TYPE_LONG8, 0).unwrap(), 8);
+    }
+
+    #[test]
+    fn type_size_double_is_8() {
+        assert_eq!(type_size(TYPE_DOUBLE, 0).unwrap(), 8);
+    }
+
+    #[test]
+    fn type_size_unknown_returns_error() {
+        let err = type_size(99, TAG_IMAGE_WIDTH).unwrap_err();
+        assert!(matches!(err, CogError::UnsupportedTagType { tag: TAG_IMAGE_WIDTH, type_id: 99 }));
+    }
+
+    // ── read_u16 ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn read_u16_little_endian() {
+        assert_eq!(read_u16(&[0x01, 0x02], 0, true).unwrap(), 0x0201);
+    }
+
+    #[test]
+    fn read_u16_big_endian() {
+        assert_eq!(read_u16(&[0x01, 0x02], 0, false).unwrap(), 0x0102);
+    }
+
+    #[test]
+    fn read_u16_with_offset() {
+        assert_eq!(read_u16(&[0x00, 0x00, 0x03, 0x04], 2, true).unwrap(), 0x0403);
+    }
+
+    #[test]
+    fn read_u16_out_of_bounds_returns_error() {
+        let err = read_u16(&[0x01], 0, true).unwrap_err();
+        assert!(matches!(err, CogError::OutOfBounds { .. }));
+    }
+
+    // ── read_u32 ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn read_u32_little_endian() {
+        assert_eq!(read_u32(&[0x01, 0x02, 0x03, 0x04], 0, true).unwrap(), 0x04030201);
+    }
+
+    #[test]
+    fn read_u32_big_endian() {
+        assert_eq!(read_u32(&[0x01, 0x02, 0x03, 0x04], 0, false).unwrap(), 0x01020304);
+    }
+
+    #[test]
+    fn read_u32_out_of_bounds_returns_error() {
+        let err = read_u32(&[0x01, 0x02], 0, true).unwrap_err();
+        assert!(matches!(err, CogError::OutOfBounds { .. }));
+    }
+
+    // ── read_u64 ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn read_u64_little_endian() {
+        let data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+        assert_eq!(read_u64(&data, 0, true).unwrap(), 0x0807060504030201);
+    }
+
+    #[test]
+    fn read_u64_big_endian() {
+        let data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+        assert_eq!(read_u64(&data, 0, false).unwrap(), 0x0102030405060708);
+    }
+
+    #[test]
+    fn read_u64_out_of_bounds_returns_error() {
+        let err = read_u64(&[0x01, 0x02, 0x03], 0, true).unwrap_err();
+        assert!(matches!(err, CogError::OutOfBounds { .. }));
+    }
+
+    // ── read_f64 ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn read_f64_little_endian_known_value() {
+        // 1.0f64 in little-endian IEEE 754
+        let data = 1.0f64.to_le_bytes();
+        assert_eq!(read_f64(&data, 0, true).unwrap(), 1.0);
+    }
+
+    #[test]
+    fn read_f64_big_endian_known_value() {
+        let data = 1.0f64.to_be_bytes();
+        assert_eq!(read_f64(&data, 0, false).unwrap(), 1.0);
+    }
+
+    #[test]
+    fn read_f64_out_of_bounds_returns_error() {
+        let err = read_f64(&[0x00; 4], 0, true).unwrap_err();
+        assert!(matches!(err, CogError::OutOfBounds { .. }));
+    }
+
+    // ── read_typed ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn read_typed_short() {
+        let data = [0x05, 0x00];
+        assert_eq!(read_typed(&data, 0, TYPE_SHORT, TAG_IMAGE_WIDTH, true).unwrap(), 5);
+    }
+
+    #[test]
+    fn read_typed_long() {
+        let data = [0x05, 0x00, 0x00, 0x00];
+        assert_eq!(read_typed(&data, 0, TYPE_LONG, TAG_IMAGE_WIDTH, true).unwrap(), 5);
+    }
+
+    #[test]
+    fn read_typed_long8() {
+        let data = [0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        assert_eq!(read_typed(&data, 0, TYPE_LONG8, TAG_IMAGE_WIDTH, true).unwrap(), 5);
+    }
+
+    #[test]
+    fn read_typed_unknown_type_returns_error() {
+        let data = [0x00; 8];
+        let err = read_typed(&data, 0, 99, TAG_IMAGE_WIDTH, true).unwrap_err();
+        assert!(matches!(err, CogError::UnsupportedTagType { .. }));
+    }
+
+    // ── read_inline_values ──────────────────────────────────────────────────
+    //
+    // IFD entry layout (12 bytes):
+    //   [0..2]  tag
+    //   [2..4]  type_id
+    //   [4..8]  count
+    //   [8..12] value(s) — inline when count * size <= 4
+    //
+    // read_inline_values reads starting at entry + 8, so we need
+    // at least 8 bytes of padding before the actual values.
+
+    fn ifd_entry_with_values(values: &[u8]) -> Vec<u8> {
+        let mut entry = vec![0u8; 8]; // tag + type + count placeholder
+        entry.extend_from_slice(values);
+        entry
+    }
+
+    #[test]
+    fn read_inline_values_single_short() {
+        let entry = ifd_entry_with_values(&[0x07, 0x00]);
+        let vals = read_inline_values(&entry, 0, TYPE_SHORT, 1, true).unwrap();
+        assert_eq!(vals, vec![7]);
+    }
+
+    #[test]
+    fn read_inline_values_two_shorts() {
+        let entry = ifd_entry_with_values(&[0x01, 0x00, 0x02, 0x00]);
+        let vals = read_inline_values(&entry, 0, TYPE_SHORT, 2, true).unwrap();
+        assert_eq!(vals, vec![1, 2]);
+    }
+
+    #[test]
+    fn read_inline_values_single_long() {
+        let entry = ifd_entry_with_values(&[0x39, 0x05, 0x00, 0x00]); // 1337 LE
+        let vals = read_inline_values(&entry, 0, TYPE_LONG, 1, true).unwrap();
+        assert_eq!(vals, vec![1337]);
+    }
+
+    // ── TiffTag round-trip ──────────────────────────────────────────────────
+
+    #[test]
+    fn tiff_tag_known_tags_round_trip() {
+        let known = [
+            TAG_IMAGE_WIDTH, TAG_IMAGE_LENGTH, TAG_COMPRESSION,
+            TAG_TILE_WIDTH, TAG_TILE_LENGTH, TAG_TILE_OFFSETS,
+            TAG_TILE_BYTE_COUNTS, TAG_SUB_IFDS, TAG_PIXEL_SCALE,
+            TAG_MODEL_TIEPOINT,
+        ];
+        for &raw in &known {
+            assert_eq!(TiffTag::from_raw(raw).as_raw(), raw, "round-trip failed for tag {raw}");
+        }
+    }
+
+    #[test]
+    fn tiff_tag_unknown_preserves_value() {
+        let tag = TiffTag::from_raw(9999);
+        assert_eq!(tag, TiffTag::Unknown(9999));
+        assert_eq!(tag.as_raw(), 9999);
+    }
+
+    // ── tag_name ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn tag_name_known_tags() {
+        assert_eq!(tag_name(TAG_IMAGE_WIDTH),     "ImageWidth");
+        assert_eq!(tag_name(TAG_IMAGE_LENGTH),    "ImageLength");
+        assert_eq!(tag_name(TAG_TILE_OFFSETS),    "TileOffsets");
+        assert_eq!(tag_name(TAG_TILE_BYTE_COUNTS),"TileByteCounts");
+        assert_eq!(tag_name(TAG_SUB_IFDS),        "SubIFDs");
+    }
+
+    #[test]
+    fn tag_name_unknown_tag() {
+        assert_eq!(tag_name(9999), "Unknown");
+    }
+}

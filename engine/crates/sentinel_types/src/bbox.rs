@@ -17,3 +17,19 @@ impl BBox {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    user super::*;
+    
+    #[test]
+    fn surrey_bc_bbox_is_in_correct_quadrant() {
+        let bbox = BBox::surrey_bc();
+        // Surrey is in the northern hemisphere, western longitude
+        assert!(bbox.min_lat > 0.0, "Surrey should be north of equator");
+        assert!(bbox.min_lon < 0.0, "Surrey should be west of prime meridian");
+        assert!(bbox.max_lat > bbox.min_lat, "max_lat should exceed min_lat");
+        assert!(bbox.max_lon > bbox.min_lon, "max_lon should exceed min_lon");
+    }
+}
+

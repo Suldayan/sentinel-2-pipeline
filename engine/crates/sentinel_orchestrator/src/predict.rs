@@ -5,7 +5,7 @@ use crate::config::OrchestratorConfig;
 use crate::error::{OrchestratorError, OrchestratorResult};
 use sentinel_types::SatellitePassEvent;
 
-pub fn ms_to_datetime(ms: f64) -> DateTime<Utc> {
+fn ms_to_datetime(ms: f64) -> DateTime<Utc> {
     Utc.timestamp_millis_opt(ms as i64)
         .single()
         .expect("timestamp out of range")
@@ -52,4 +52,22 @@ pub fn predict_passes(
         .collect();
 
     Ok(events)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ms_to_datetime_unix_epoch() {
+        let dt = ms_to_datetime(0.0);
+        assert_eq!(dt.to_rfc3339(), "1970-01-01T00:00:00+00:00");
+    }
+
+    #[test]
+    fn ms_to_datetime_known_timestamp() {
+        let dt = ms_to_datetime(1_775_757_600_000.0);
+        assert_eq!(dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(), "2026-04-09T18:00:00Z");
+    }
+
 }
