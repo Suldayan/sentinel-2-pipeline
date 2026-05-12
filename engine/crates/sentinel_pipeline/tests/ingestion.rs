@@ -9,13 +9,13 @@ use sentinel_types::SatellitePassEvent;
 fn surrey_event() -> SatellitePassEvent {
     SatellitePassEvent {
         satellite_id: "SENTINEL-2A".into(),
-        pass_start: "2024-07-15T00:00:00Z".parse::<DateTime<chrono::Utc>>().unwrap(),
-        pass_end: "2024-07-15T23:59:59Z".parse::<DateTime<chrono::Utc>>().unwrap(),
+        pass_start: "2020-07-10T00:00:00Z".parse::<DateTime<chrono::Utc>>().unwrap(),
+        pass_end: "2026-03-10T23:59:59Z".parse::<DateTime<chrono::Utc>>().unwrap(),
         max_elevation_deg: 0.0,
-        min_lon: -123.48,
-        max_lon: -122.88,
-        min_lat: 49.00,
-        max_lat: 49.40,
+        min_lon: -122.95,
+        max_lon: -122.65,
+        min_lat: 49.05,
+        max_lat: 49.35,
     }
 }
 
