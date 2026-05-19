@@ -2672,9 +2672,11 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "log",
+ "postgres",
  "sentinel_db",
  "sentinel_pipeline",
  "sentinel_types",
+ "testcontainers-modules",
 ]
 
 [[package]]

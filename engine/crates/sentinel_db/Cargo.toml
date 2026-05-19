@@ -12,5 +12,5 @@ postgres = { version = "0.19.13", features = ["with-chrono-0_4"] }
 
 [dev-dependencies]
 testcontainers-modules = { version = "0.11", features = ["postgres", "blocking"] }
-postgres               = { version = "0.19", features = ["with-chrono-0_4"] }
-chrono                 = { version = "0.4", features = ["serde"] }
+postgres = { version = "0.19", features = ["with-chrono-0_4"] }
+chrono = { version = "0.4", features = ["serde"] }
