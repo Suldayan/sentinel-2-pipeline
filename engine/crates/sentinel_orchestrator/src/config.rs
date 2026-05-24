@@ -1,4 +1,4 @@
-pub struct AzureConfig {
+pub struct Config {
     pub database_url: String,
     pub satellite_id: String,
     pub min_lon: f64,
@@ -9,7 +9,7 @@ pub struct AzureConfig {
     pub lookback_days: i64,
 }
 
-impl AzureConfig {
+impl Config {
     pub fn from_env() -> Self {
         Self {
             database_url: std::env::var("DATABASE_URL")
@@ -46,13 +46,13 @@ impl AzureConfig {
     pub fn for_test(overview_level: u8, database_url: String) -> Self {
         Self {
             database_url,
-            satellite_id: "SENTINEL-2A".into(),
-            min_lon: -122.95,
+            satellite_id: "SENTINEL-2".into(),
+            min_lon: -123.95,
             max_lon: -122.65,
             min_lat: 49.05,
             max_lat: 49.35,
             overview_level,
-            lookback_days: 2190,
+            lookback_days: 400,
         }
     }
 }

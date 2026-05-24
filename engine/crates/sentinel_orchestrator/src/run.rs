@@ -1,15 +1,15 @@
 use chrono::Utc;
 use sentinel_types::SatellitePassEvent;
-use crate::config::AzureConfig;
+use crate::config::Config;
 
 /// Entry point for production — reads config from environment.
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
-    run_with(AzureConfig::from_env())
+    run_with(Config::from_env())
 }
 
 /// Runs the pipeline with an explicit config — used directly in tests
 /// to avoid env var mutation.
-pub fn run_with(config: AzureConfig) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_with(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let event = SatellitePassEvent {
         satellite_id: config.satellite_id,
         pass_start: Utc::now() - chrono::Duration::days(config.lookback_days),

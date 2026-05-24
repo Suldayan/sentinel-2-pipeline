@@ -2,7 +2,7 @@ use testcontainers_modules::{
     postgres::Postgres,
     testcontainers::{Container, runners::SyncRunner, ImageExt},
 };
-use sentinel_orchestrator::AzureConfig;
+use sentinel_orchestrator::Config;
 
 fn start_postgis() -> (Container<Postgres>, String) {
     let container = Postgres::default()
@@ -44,7 +44,7 @@ fn run_pipeline_at_level(overview_level: u8) -> (f32, i32) {
     let mut client = postgres::Client::connect(&conn_str, postgres::NoTls).unwrap();
     setup_schema(&mut client);
 
-    sentinel_orchestrator::run_with(AzureConfig::for_test(overview_level, conn_str.clone()))
+    sentinel_orchestrator::run_with(Config::for_test(overview_level, conn_str.clone()))
         .unwrap_or_else(|e| panic!("Pipeline failed at level {overview_level}: {e}"));
 
     let row = client
@@ -79,7 +79,7 @@ fn pipeline_overview_level_1() {
 #[test]
 #[ignore]
 fn pipeline_overview_level_out_of_range() {
-    let result = sentinel_orchestrator::run_with(AzureConfig::for_test(2, "unused".into()));
+    let result = sentinel_orchestrator::run_with(Config::for_test(2, "unused".into()));
     assert!(result.is_err(), "Expected error for unavailable overview level");
 }
 
