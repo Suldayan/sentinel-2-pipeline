@@ -8,7 +8,7 @@ license = "MIT"
 readme = "README.md"
  
 [dependencies]
-sentinel_cog = {version = "0.1.0", path = "../sentinel_cog" }
+sentinel_cog = {version = "0.2.0", path = "../sentinel_cog" }
 image = "0.24"
 tiff = "0.9"
 serde = { version = "1", features = ["derive"] }

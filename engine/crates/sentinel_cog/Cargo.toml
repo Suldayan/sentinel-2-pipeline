@@ -8,7 +8,7 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-sentinel_types = {version = "0.1.0", path = "../sentinel_types"}
+sentinel_types = {version = "0.1.1", path = "../sentinel_types"}
 reqwest = { version = "0.12", features = ["blocking", "gzip"] }
 bytes = "1"
 image = { version = "0.25", features = ["tiff"] }
